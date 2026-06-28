@@ -36,6 +36,7 @@ public class SearchIndexSyncHook {
             return;
         }
         log.debug("search index sync hook: topic {}", resourceId);
+        resourceMainUpsertService.upsertFromTopicResource(resourceId);
         syncService.syncTopicByIdAsync(resourceId);
         documentSyncService.syncTopicByIdAsync(resourceId);
     }
@@ -45,6 +46,7 @@ public class SearchIndexSyncHook {
             return;
         }
         log.debug("search index sync hook: competition {}", resourceId);
+        resourceMainUpsertService.upsertFromCompetitionResource(resourceId);
         syncService.syncCompetitionByIdAsync(resourceId);
         documentSyncService.syncCompetitionByIdAsync(resourceId);
     }
@@ -54,6 +56,7 @@ public class SearchIndexSyncHook {
             return;
         }
         log.debug("search index sync hook: culture {}", resourceId);
+        resourceMainUpsertService.upsertFromCultureResource(resourceId);
         syncService.syncCultureByIdAsync(resourceId);
         documentSyncService.syncCultureByIdAsync(resourceId);
     }
