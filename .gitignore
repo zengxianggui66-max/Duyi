@@ -1,0 +1,47 @@
+# Dependencies & build
+node_modules/
+dist/
+dist-ssr/
+target/
+
+# Logs & runtime
+logs/
+*.log
+derby.log
+jmeter.log
+hs_err_pid*.log
+replay_pid*.log
+
+# IDE & local tooling
+.idea/
+.vs/
+.vscode/
+.codebuddy/
+.workbuddy/
+.agents/
+*.local
+
+# Temp / scratch
+t.txt
+t2.txt
+t3.txt
+t4.txt
+t5.txt
+t6.txt
+t7.txt
+0
+app-out.log
+proxy-err.log
+proxy-out.log
+verify_*.txt
+users.txt
+plan_doc.xml
+req_doc.xml
+
+# Secrets
+.env
+.env.*
+credentials.json
+
+# Nested empty git stubs
+k12-edu-platform/.git/

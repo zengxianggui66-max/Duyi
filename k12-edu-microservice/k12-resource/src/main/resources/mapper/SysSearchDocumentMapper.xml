@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.k12.resource.mapper.SysSearchDocumentMapper">
+
+    <sql id="searchTextMatch">
+        <choose>
+            <when test="q.broadMatch and q.tokenClauses != null and q.tokenClauses.size() &gt; 0">
+                AND (
+                <foreach collection="q.tokenClauses" item="clause" separator=" OR ">
+                    (
+                    <foreach collection="clause.aliases" item="alias" separator=" OR ">
+                        title LIKE CONCAT('%', #{alias}, '%')
+                        OR keyword_text LIKE CONCAT('%', #{alias}, '%')
+                        OR summary LIKE CONCAT('%', #{alias}, '%')
+                        OR content_text LIKE CONCAT('%', #{alias}, '%')
+                        OR subtitle LIKE CONCAT('%', #{alias}, '%')
+                    </foreach>
+                    )
+                </foreach>
+                )
+            </when>
+            <when test="q.tokenClauses != null and q.tokenClauses.size() &gt; 0">
+                <foreach collection="q.tokenClauses" item="clause">
+                    AND (
+                    <foreach collection="clause.aliases" item="alias" separator=" OR ">
+                        title LIKE CONCAT('%', #{alias}, '%')
+                        OR keyword_text LIKE CONCAT('%', #{alias}, '%')
+                        OR summary LIKE CONCAT('%', #{alias}, '%')
+                        OR content_text LIKE CONCAT('%', #{alias}, '%')
+                        OR subtitle LIKE CONCAT('%', #{alias}, '%')
+                    </foreach>
+                    )
+                </foreach>
+            </when>
+            <when test="q.mustTokens != null and q.mustTokens.size() &gt; 0">
+                <foreach collection="q.mustTokens" item="token">
+                    AND (
+                        title LIKE CONCAT('%', #{token}, '%')
+                        OR keyword_text LIKE CONCAT('%', #{token}, '%')
+                        OR summary LIKE CONCAT('%', #{token}, '%')
+                        OR content_text LIKE CONCAT('%', #{token}, '%')
+                        OR subtitle LIKE CONCAT('%', #{token}, '%')
+                    )
+                </foreach>
+            </when>
+        </choose>
+    </sql>
+
+    <sql id="relevanceScoreExpr">
+        (
+            CASE
+                WHEN #{q.rawKeyword} IS NOT NULL AND #{q.rawKeyword} != '' AND title = #{q.rawKeyword} THEN 300
+                WHEN #{q.rawKeyword} IS NOT NULL AND #{q.rawKeyword} != '' AND title LIKE CONCAT(#{q.rawKeyword}, '%') THEN 220
+                WHEN #{q.rawKeyword} IS NOT NULL AND #{q.rawKeyword} != '' AND title LIKE CONCAT('%', #{q.rawKeyword}, '%') THEN 140
+                ELSE 0
+            END
+        )
+        <if test="q.tokenClauses != null and q.tokenClauses.size() &gt; 0">
+            <foreach collection="q.tokenClauses" item="clause">
+                + (
+                    CASE
+                        WHEN title LIKE CONCAT(#{clause.primary}, '%') THEN 80
+                        WHEN title LIKE CONCAT('%', #{clause.primary}, '%') THEN 50
+                        WHEN keyword_text LIKE CONCAT('%', #{clause.primary}, '%') THEN 40
+                        WHEN resource_type_name LIKE CONCAT('%', #{clause.primary}, '%') THEN 35
+                        WHEN summary LIKE CONCAT('%', #{clause.primary}, '%') THEN 25
+                        WHEN content_text LIKE CONCAT('%', #{clause.primary}, '%') THEN 15
+                        ELSE 0
+                    END
+                )
+            </foreach>
+        </if>
+        + IFNULL(hot_score, 0)
+        + IFNULL(quality_score, 0) * 2
+    </sql>
+
+    <sql id="commonFilter">
+        <if test="q.hideVip">
+            AND vip_flag = 0
+        </if>
+        <include refid="searchTextMatch"/>
+        <if test="q.subject != null and q.subject != ''">
+            AND (subject_name = #{q.subject}
+            <if test="q.subjectKey != null and q.subjectKey != ''">
+                OR subject_key = #{q.subjectKey}
+            </if>
+            )
+        </if>
+        <if test="(q.subject == null or q.subject == '') and q.subjectKey != null and q.subjectKey != ''">
+            AND subject_key = #{q.subjectKey}
+        </if>
+        <if test="q.gradeName != null and q.gradeName != '' and !q.softGradeFilter">
+            AND grade_name LIKE CONCAT('%', #{q.gradeName}, '%')
+        </if>
+        <if test="q.moduleName != null and q.moduleName != ''">
+            AND module_name LIKE CONCAT('%', #{q.moduleName}, '%')
+        </if>
+        <if test="q.moduleKey != null and q.moduleKey != ''">
+            AND (module_key = #{q.moduleKey}
+            <if test="q.moduleName != null and q.moduleName != ''">
+                OR module_name LIKE CONCAT('%', #{q.moduleName}, '%')
+            </if>
+            )
+        </if>
+        <if test="q.teachingTypeNames != null and q.teachingTypeNames.size() &gt; 0">
+            AND resource_type_name IN
+            <foreach collection="q.teachingTypeNames" item="tn" open="(" separator="," close=")">
+                #{tn}
+            </foreach>
+        </if>
+        <if test="(q.teachingTypeNames == null or q.teachingTypeNames.size() == 0) and q.resourceTypeKey != null and q.resourceTypeKey != ''">
+            AND (resource_type_key = #{q.resourceTypeKey}
+            <if test="q.teachingType != null and q.teachingType != ''">
+                OR resource_type_name = #{q.teachingType}
+            </if>
+            )
+        </if>
+    </sql>
+
+    <sql id="domainFilter">
+        <if test="q.contentDomain == 'news'">
+            AND doc_type = 'news'
+        </if>
+        <if test="q.contentDomain == 'prep'">
+            AND doc_type IN ('prep', 'lesson')
+        </if>
+        <if test="q.contentDomain == 'feature'">
+            AND doc_type IN ('feature', 'channel')
+        </if>
+        <if test="q.contentDomain == 'stage_resource'">
+            AND doc_type IN ('resource', 'subject', 'page')
+            AND (channel_key IS NULL OR channel_key IN ('stage_resource', ''))
+        </if>
+        <if test="q.domainChannelKeys != null and q.domainChannelKeys.size() &gt; 0 and (q.contentDomain == null or q.contentDomain == '')">
+            AND channel_key IN
+            <foreach collection="q.domainChannelKeys" item="ck" open="(" separator="," close=")">
+                #{ck}
+            </foreach>
+        </if>
+    </sql>
+
+    <sql id="searchWhere">
+        FROM sys_search_document
+        WHERE status = 1 AND is_deleted = 0
+        <include refid="commonFilter"/>
+        <include refid="domainFilter"/>
+        <if test="q.stageKey != null and q.stageKey != ''">
+            AND stage_key = #{q.stageKey}
+        </if>
+        <if test="q.channelKey != null and q.channelKey != ''">
+            AND channel_key = #{q.channelKey}
+        </if>
+        <if test="(q.teachingTypeNames == null or q.teachingTypeNames.size() == 0) and q.teachingType != null and q.teachingType != ''">
+            AND resource_type_name = #{q.teachingType}
+        </if>
+    </sql>
+
+    <sql id="facetBaseWhere">
+        FROM sys_search_document
+        WHERE status = 1 AND is_deleted = 0
+        <include refid="commonFilter"/>
+        <include refid="domainFilter"/>
+    </sql>
+
+    <select id="countSearch" resultType="long">
+        SELECT COUNT(1)
+        <include refid="searchWhere"/>
+    </select>
+
+    <select id="searchPage" resultType="com.k12.resource.entity.SysSearchDocument">
+        SELECT *
+        <include refid="searchWhere"/>
+        ORDER BY
+        <choose>
+            <when test="q.sort == 'newest'">
+                publish_time DESC, hot_score DESC
+            </when>
+            <when test="q.sort == 'download'">
+                download_count DESC, view_count DESC
+            </when>
+            <otherwise>
+                <include refid="relevanceScoreExpr"/> DESC,
+                publish_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{q.offset}, #{q.limit}
+    </select>
+
+    <select id="facetStages" resultType="com.k12.resource.search.SearchFacetRow">
+        SELECT stage_key AS facetKey, stage_name AS facetName, COUNT(1) AS facetCount
+        <include refid="facetBaseWhere"/>
+        AND stage_key IS NOT NULL AND stage_key != ''
+        GROUP BY stage_key, stage_name
+        ORDER BY facetCount DESC
+    </select>
+
+    <select id="facetChannels" resultType="com.k12.resource.search.SearchFacetRow">
+        SELECT channel_key AS facetKey, channel_name AS facetName, COUNT(1) AS facetCount
+        <include refid="facetBaseWhere"/>
+        AND channel_key IS NOT NULL AND channel_key != ''
+        GROUP BY channel_key, channel_name
+        ORDER BY facetCount DESC
+    </select>
+
+    <select id="facetTypes" resultType="com.k12.resource.search.SearchFacetRow">
+        SELECT resource_type_name AS facetKey, resource_type_name AS facetName, COUNT(1) AS facetCount
+        <include refid="facetBaseWhere"/>
+        AND resource_type_name IS NOT NULL AND resource_type_name != ''
+        GROUP BY resource_type_name
+        ORDER BY facetCount DESC
+    </select>
+
+    <select id="suggestByKind" resultType="com.k12.resource.entity.SysSearchDocument">
+        SELECT *
+        FROM sys_search_document
+        WHERE status = 1 AND is_deleted = 0
+        <if test="q.hideVip">
+            AND vip_flag = 0
+        </if>
+        <if test="docTypes != null and docTypes.size() &gt; 0">
+            AND doc_type IN
+            <foreach collection="docTypes" item="dt" open="(" separator="," close=")">
+                #{dt}
+            </foreach>
+        </if>
+        <if test="q.rawKeyword != null and q.rawKeyword != ''">
+            AND (
+                title LIKE CONCAT('%', #{q.rawKeyword}, '%')
+                OR keyword_text LIKE CONCAT('%', #{q.rawKeyword}, '%')
+                OR summary LIKE CONCAT('%', #{q.rawKeyword}, '%')
+            )
+        </if>
+        ORDER BY
+        CASE WHEN title LIKE CONCAT(#{q.rawKeyword}, '%') THEN 0 ELSE 1 END,
+        hot_score DESC
+        LIMIT #{q.limit}
+    </select>
+
+    <select id="searchBroadPage" resultType="com.k12.resource.entity.SysSearchDocument">
+        SELECT *
+        <include refid="searchWhere"/>
+        ORDER BY
+        <include refid="relevanceScoreExpr"/> DESC,
+        publish_time DESC
+        LIMIT #{q.offset}, #{q.limit}
+    </select>
+
+    <select id="countBroadSearch" resultType="long">
+        SELECT COUNT(1)
+        <include refid="searchWhere"/>
+    </select>
+
+    <select id="searchExactTitle" resultType="com.k12.resource.entity.SysSearchDocument">
+        SELECT *
+        FROM sys_search_document
+        WHERE status = 1 AND is_deleted = 0
+        <if test="q.hideVip">
+            AND vip_flag = 0
+        </if>
+        <if test="q.rawKeyword != null and q.rawKeyword != ''">
+            AND (title = #{q.rawKeyword} OR title LIKE CONCAT(#{q.rawKeyword}, '%'))
+        </if>
+        <include refid="domainFilter"/>
+        ORDER BY
+        CASE WHEN title = #{q.rawKeyword} THEN 0 ELSE 1 END,
+        hot_score DESC
+        LIMIT 20
+    </select>
+
+    <select id="findByDocIds" resultType="com.k12.resource.entity.SysSearchDocument">
+        SELECT *
+        FROM sys_search_document
+        WHERE status = 1 AND is_deleted = 0
+        <if test="hideVip">
+            AND vip_flag = 0
+        </if>
+        AND doc_id IN
+        <foreach collection="docIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

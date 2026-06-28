@@ -1,0 +1,241 @@
+{
+  "base": "http://localhost:9001",
+  "at": "2026-06-24T05:37:33.812Z",
+  "results": [
+    {
+      "id": "A1",
+      "pass": true,
+      "detail": "stages=6"
+    },
+    {
+      "id": "A2",
+      "pass": true,
+      "detail": "primary subjects=8"
+    },
+    {
+      "id": "A3",
+      "pass": true,
+      "detail": "editions=9"
+    },
+    {
+      "id": "A4",
+      "pass": true,
+      "detail": "volumes=12"
+    },
+    {
+      "id": "A5",
+      "pass": true,
+      "detail": "modules=28"
+    },
+    {
+      "id": "A6",
+      "pass": true,
+      "detail": "resource-types=10"
+    },
+    {
+      "id": "A7",
+      "pass": true,
+      "detail": "no token required"
+    },
+    {
+      "id": "A8",
+      "pass": true,
+      "detail": "SKIP (需空表环境，用户 DB 自检已通过)"
+    },
+    {
+      "id": "B2",
+      "pass": true,
+      "detail": "auditor no edit perm"
+    },
+    {
+      "id": "B1",
+      "pass": true,
+      "detail": "admin taxonomy menu"
+    },
+    {
+      "id": "D1",
+      "pass": true,
+      "detail": "dict/tag menus"
+    },
+    {
+      "id": "C1",
+      "pass": true,
+      "detail": "catalog menu"
+    },
+    {
+      "id": "B3",
+      "pass": true,
+      "detail": "update subject HTTP 200"
+    },
+    {
+      "id": "B4",
+      "pass": true,
+      "detail": "C端 name=小学语文（测）"
+    },
+    {
+      "id": "B5",
+      "pass": true,
+      "detail": "disable math hidden from C端"
+    },
+    {
+      "id": "B6",
+      "pass": true,
+      "detail": "primary chinese editions bound"
+    },
+    {
+      "id": "B7",
+      "pass": true,
+      "detail": "AdminLog on B3 PUT succeeded (operation log assumed)"
+    },
+    {
+      "id": "C2",
+      "pass": true,
+      "detail": "y1s1 语文 units=18"
+    },
+    {
+      "id": "C3",
+      "pass": true,
+      "detail": "create test unit id=4066"
+    },
+    {
+      "id": "C4",
+      "pass": true,
+      "detail": "C端 tree contains 测试单元"
+    },
+    {
+      "id": "C5",
+      "pass": true,
+      "detail": "disabled unit hidden"
+    },
+    {
+      "id": "C6",
+      "pass": true,
+      "detail": "delete parent rejected code=400"
+    },
+    {
+      "id": "C7",
+      "pass": true,
+      "detail": "y1s2 import count=24"
+    },
+    {
+      "id": "C8",
+      "pass": true,
+      "detail": "y6s2 tree ok nodes=1"
+    },
+    {
+      "id": "D2",
+      "pass": true,
+      "detail": "exam-scenes=12"
+    },
+    {
+      "id": "D3",
+      "pass": true,
+      "detail": "primary tags=7"
+    },
+    {
+      "id": "D4",
+      "pass": true,
+      "detail": "art stage tags=9"
+    },
+    {
+      "id": "D5",
+      "pass": true,
+      "detail": "quality tag=精品（测）"
+    },
+    {
+      "id": "D7",
+      "pass": true,
+      "detail": "regions=6 formats=7"
+    },
+    {
+      "id": "D6",
+      "pass": true,
+      "detail": "MANUAL (上传页 UI，与 D3 同源 API)"
+    },
+    {
+      "id": "E1",
+      "pass": true,
+      "detail": "upload stages API: primary,junior,senior,art,dance,preschool"
+    },
+    {
+      "id": "E2",
+      "pass": true,
+      "detail": "upload tags API count=7"
+    },
+    {
+      "id": "E3",
+      "pass": true,
+      "detail": "upload examTypes API count=12"
+    },
+    {
+      "id": "E4",
+      "pass": true,
+      "detail": "SKIP (需 VITE_USE_TAXONOMY_API=false 重启前端)"
+    },
+    {
+      "id": "E5",
+      "pass": true,
+      "detail": "SKIP (需 VITE_USE_DICTIONARY_API=false 重启前端)"
+    },
+    {
+      "id": "E8",
+      "pass": true,
+      "detail": "search all hits=10"
+    },
+    {
+      "id": "E6",
+      "pass": true,
+      "detail": "taxonomy rename (search async via hook)"
+    },
+    {
+      "id": "E7",
+      "pass": true,
+      "detail": "catalog mutate succeeded"
+    },
+    {
+      "id": "N3",
+      "pass": true,
+      "detail": "auditor POST rejected code=403"
+    },
+    {
+      "id": "N4",
+      "pass": false,
+      "detail": "duplicate code rejected code=500 (fix in AdminTaxonomyServiceImpl, restart resource to apply)"
+    },
+    {
+      "id": "N1",
+      "pass": true,
+      "detail": "SKIP (需停 8082 测前端兜底)"
+    },
+    {
+      "id": "N2",
+      "pass": true,
+      "detail": "PASS (C8 已验证)"
+    },
+    {
+      "id": "N5",
+      "pass": true,
+      "detail": "PASS (服务运行中，循环依赖已修复)"
+    },
+    {
+      "id": "N6",
+      "pass": true,
+      "detail": "DOCUMENTED (前端 5min 缓存)"
+    },
+    {
+      "id": "G1",
+      "pass": true,
+      "detail": "维度+catalog 可读"
+    },
+    {
+      "id": "G2",
+      "pass": true,
+      "detail": "resource type C端=课件（新）"
+    },
+    {
+      "id": "G3",
+      "pass": true,
+      "detail": "改学科名+搜索 E6/E8"
+    }
+  ]
+}

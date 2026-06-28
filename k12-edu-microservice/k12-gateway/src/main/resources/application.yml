@@ -1,0 +1,250 @@
+server:
+  port: 9001
+
+spring:
+  application:
+    name: k12-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: k12-edu
+        enabled: false
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      # 路由规则：网关统一入口 /api/**，按前缀转发到对应微服务（直连，无需 Nacos）
+      routes:
+        - id: k12-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-resource
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/resource/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-file
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/file/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-primary-chinese
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/primary-chinese/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-brands
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/brands/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-catalog
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/catalog/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-taxonomy
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/taxonomy/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-dictionary
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/dictionary/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-resources-browse
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/resources/browse/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-resources-master
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/resources/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-edu-resource
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/edu-resource/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-home
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/home/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-channel
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/channel/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-culture
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/culture/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-competition
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/competition/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-topic
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/topic/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-admin-user-behavior
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/admin/users/*/resources,/api/admin/users/*/resources/**,/api/admin/users/*/collections,/api/admin/users/*/collections/**,/api/admin/users/*/stats,/api/admin/users/*/actions,/api/admin/users/*/actions/**,/api/admin/users/*/login-logs,/api/admin/users/*/login-logs/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-admin-users
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/admin/users,/api/admin/users/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-public
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/public/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-admin-system-status
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/admin/system/storage/status,/api/admin/system/preview/status
+          filters:
+            - StripPrefix=0
+
+        - id: k12-admin-analytics-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/admin/analytics/users,/api/admin/analytics/users/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-admin-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/admin/auth/**,/api/admin/menus,/api/admin/permissions,/api/admin/permissions/**,/api/admin/roles,/api/admin/roles/**,/api/admin/operation-logs,/api/admin/operation-logs/**,/api/admin/system/logs,/api/admin/system/logs/**,/api/admin/system/login-logs,/api/admin/system/login-logs/**,/api/admin/system/config,/api/admin/system/config/**,/api/admin/system/feature-flags,/api/admin/system/feature-flags/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-admin-articles
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/admin/articles,/api/admin/articles/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-admin-resource
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-search-admin-gone
+          uri: no://op
+          predicates:
+            - Path=/api/search/admin/**
+          filters:
+            - SetStatus=404
+
+        - id: k12-search
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/search/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-unit-doc
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/unit-doc/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-article
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/news/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-lesson
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/lesson/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-exam
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/exam/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-member
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/member/**
+          filters:
+            - StripPrefix=0
+
+        - id: k12-prep
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/prep/**
+          filters:
+            - StripPrefix=0
+
+# JWT 配置（与 auth 服务保持一致）
+jwt:
+  secret: k12-education-platform-secret-key-2026-spring-boot-jwt-token
+  expiration: 86400000
+
+logging:
+  level:
+    org.springframework.cloud.gateway: info

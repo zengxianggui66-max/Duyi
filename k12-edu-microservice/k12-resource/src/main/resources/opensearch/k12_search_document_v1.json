@@ -1,0 +1,48 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "analysis": {
+      "analyzer": {
+        "cn_text": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "docId": { "type": "keyword" },
+      "docType": { "type": "keyword" },
+      "bizId": { "type": "keyword" },
+      "title": {
+        "type": "text",
+        "analyzer": "cn_text",
+        "fields": { "keyword": { "type": "keyword" } }
+      },
+      "subtitle": { "type": "text", "analyzer": "cn_text" },
+      "summary": { "type": "text", "analyzer": "cn_text" },
+      "contentText": { "type": "text", "analyzer": "cn_text" },
+      "keywordText": { "type": "text", "analyzer": "cn_text" },
+      "stageKey": { "type": "keyword" },
+      "stageName": { "type": "keyword" },
+      "subjectKey": { "type": "keyword" },
+      "subjectName": { "type": "keyword" },
+      "gradeName": { "type": "keyword" },
+      "channelKey": { "type": "keyword" },
+      "channelName": { "type": "keyword" },
+      "moduleKey": { "type": "keyword" },
+      "moduleName": { "type": "keyword" },
+      "resourceTypeKey": { "type": "keyword" },
+      "resourceTypeName": { "type": "keyword" },
+      "routePath": { "type": "keyword" },
+      "publishTime": { "type": "date", "format": "yyyy-MM-dd'T'HH:mm:ss||yyyy-MM-dd HH:mm:ss||epoch_millis" },
+      "hotScore": { "type": "double" },
+      "qualityScore": { "type": "double" },
+      "status": { "type": "integer" },
+      "isDeleted": { "type": "integer" }
+    }
+  }
+}

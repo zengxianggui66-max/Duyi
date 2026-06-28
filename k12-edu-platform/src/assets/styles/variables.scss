@@ -1,0 +1,76 @@
+// =========================================
+// 新课堂教育 - 设计令牌体系 (Design Tokens)
+// =========================================
+
+// ===== 1. 品牌色 =====
+$brand-primary: #4361EE;        // 新课堂主色 (深蓝紫)
+$brand-accent: #F5C542;         // 新课堂商标黄 (浅黄色)
+
+// ===== 2. 语义辅助色 =====
+$color-premium: #FF8C00;        // 精品推荐 · 橙色
+$color-free: #10B981;           // 免费 · 绿色
+$color-hot: #EF4444;            // 热门 · 红色
+$color-topic: #7C3AED;          // 专题 · 紫色
+
+// ===== 3. 字体层级 (五级 + 2 特例) =====
+$font-h1: 28px;   $fw-h1: 700;  $lh-h1: 1.35;   // H1 Hero
+$font-h2: 22px;   $fw-h2: 700;  $lh-h2: 1.4;    // H2 Section
+$font-h3: 18px;   $fw-h3: 700;  $lh-h3: 1.45;   // H3 Panel
+$font-h4: 15px;   $fw-h4: 600;  $lh-h4: 1.5;    // H4 Card Title
+$font-body: 14px; $fw-body: 400; $lh-body: 1.6;  // Body
+$font-caption: 12px; $fw-caption: 400; $lh-caption: 1.5; // Caption
+$font-small: 11px;  $fw-small: 500;  $lh-small: 1.4;   // Small
+
+// ===== 4. 统一间距 (4px 基础单位) =====
+$space-unit: 4px;
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+$space-2xl: 48px;
+
+// ===== 5. 统一定义圆角 =====
+$radius-sm: 6px;                // 小标签、按钮
+$radius-md: 10px;               // 卡片、面板
+$radius-lg: 16px;               // 大卡片、弹窗
+$radius-xl: 24px;               // 特殊容器
+$radius-round: 999px;           // 胶囊
+
+// ===== 6. 精简阴影层级 =====
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$shadow-card: 0 1px 4px rgba(0, 0, 0, 0.04);  // 卡片统一浅影
+
+// ===== 7. 原有兼容变量（向下兼容旧组件） =====
+$color-primary: $brand-primary;
+$color-success: #10B981;
+$color-warning: #F59E0B;
+$color-danger: #EF4444;
+$color-info: #6B7280;
+
+$bg-color: #F5F7FA;
+$bg-card: #FFFFFF;
+
+$text-primary: #1A1A2E;
+$text-regular: #4A4A68;
+$text-secondary: #8E8EA0;
+$text-placeholder: #B0B0C0;
+
+$border-color: #E8ECF4;
+$border-light: #F0F2F8;
+$border-lighter: #F5F7FA;
+
+$shadow-light: $shadow-sm;
+$shadow-dark: $shadow-md;
+
+$spacing-xs: $space-xs;
+$spacing-sm: $space-sm;
+$spacing-md: $space-md;
+$spacing-lg: $space-lg;
+$spacing-xl: $space-xl;
+
+// 学段颜色（保留）
+$stage-primary: $brand-primary;
+$stage-junior: #10B981;
+$stage-senior: #F59E0B;

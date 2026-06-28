@@ -1,0 +1,122 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: k12-resource
+  datasource:
+    url: jdbc:mysql://localhost:3306/xinketang?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: zxg123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: k12-edu
+        enabled: false
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+jwt:
+  secret: k12-education-platform-secret-key-2026-spring-boot-jwt-token
+  expiration: 86400000
+
+logging:
+  level:
+    com.k12.resource.mapper: debug
+
+# MinIO 对象存储配置
+minio:
+  endpoint: http://localhost:9000
+  accessKey: admin
+  secretKey: admin123
+  bucketName: k12-resources
+
+# 本地文件上传配置（默认用户目录，避免 D: 盘不存在导致上传失败）
+upload:
+  path: ${user.home}/k12-uploads
+  base-url: http://localhost:8082/uploads
+  max-size: 500
+  preview:
+    enabled: true
+    libreoffice-enabled: true
+    libreoffice-path: C:/Program Files/LibreOffice/program/soffice.exe
+    libreoffice-timeout-seconds: 120
+    poi-fallback-enabled: true
+    ppt-poi-fallback-enabled: false
+    doc-poi-fallback-enabled: false
+    ppt-slides-enabled: true
+    async-enabled: true
+    async-poll-interval-ms: 3000
+
+# 同步备课上传默认状态（0=待审核，1=已发布；生产同样为 0）
+k12:
+  resource:
+    upload:
+      default-status: 0
+  search:
+    rate-limit-per-minute: 30
+    index-auto-rebuild-on-empty: true
+    hide-vip-for-anonymous: true
+    sensitive-words:
+      - 赌博
+      - 色情
+      - 暴力
+      - 反动
+      - 邪教
+    redirect:
+      enabled: true
+      min-top-score: 4.0
+      min-score-gap: 0.8
+      require-exact-title: true
+    cache:
+      enabled: true
+      suggest-ttl-seconds: 60
+      hot-ttl-seconds: 300
+      search-ttl-seconds: 30
+    lexicon:
+      stop-words: []
+      synonyms: {}
+    engine:
+      enabled: false
+      shadow: true
+      fallback-to-mysql: true
+      provider: opensearch
+      index-name: k12_search_document_v1
+      hosts: ""
+      scheme: http
+      username: ""
+      password: ""
+      traffic-percent: 0
+  admin:
+    rbac:
+      enabled: true
+  audit:
+    # 审核通过后是否自动上架：true=审核即上架(兼容旧行为) false=仅改audit_status需手动发布
+    auto-publish: false
+  home:
+    cache:
+      enabled: true
+      bootstrap-ttl-seconds: 60
+    schedule:
+      enabled: true
+      cron: "0 * * * * *"
+
+# 前端站点根地址（分享链接生成）
+app:
+  frontend-base-url: http://localhost:5173

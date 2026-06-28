@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.k12.resource.mapper.AdminAnalyticsMapper">
+
+    <sql id="resourceScopeWhere">
+        r.is_deleted = 0
+        AND r.status != 4
+        <if test="uploaderId != null">
+            AND r.uploader_id = #{uploaderId}
+        </if>
+        <if test="stages != null and stages.size() &gt; 0">
+            AND r.stage IN
+            <foreach collection="stages" item="s" open="(" separator="," close=")">
+                #{s}
+            </foreach>
+        </if>
+        <if test="subjects != null and subjects.size() &gt; 0">
+            AND r.subject IN
+            <foreach collection="subjects" item="sub" open="(" separator="," close=")">
+                #{sub}
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="selectSummary" resultType="map">
+        SELECT
+            COUNT(*) AS totalResources,
+            SUM(CASE WHEN r.status = 0 THEN 1 ELSE 0 END) AS pendingResources,
+            SUM(CASE WHEN r.status = 1 THEN 1 ELSE 0 END) AS publishedResources,
+            COALESCE(SUM(r.download_count), 0) AS totalDownloads,
+            COALESCE(SUM(r.view_count), 0) AS totalViews,
+            COALESCE(SUM(collect_cnt.cnt), 0) AS totalCollects,
+            SUM(CASE WHEN r.upload_time &gt;= #{since} THEN 1 ELSE 0 END) AS newResourcesInPeriod
+        FROM xinketang.oss_primary_chinese_resource r
+        LEFT JOIN (
+            SELECT c.resource_id, COUNT(*) AS cnt
+            FROM collection c
+            WHERE c.resource_type = 'primary_chinese'
+            GROUP BY c.resource_id
+        ) collect_cnt ON collect_cnt.resource_id = r.id
+        WHERE
+        <include refid="resourceScopeWhere"/>
+    </select>
+
+    <select id="countResourcesBefore" resultType="long">
+        SELECT COUNT(*)
+        FROM xinketang.oss_primary_chinese_resource r
+        WHERE r.upload_time &lt; #{before}
+        AND
+        <include refid="resourceScopeWhere"/>
+    </select>
+
+    <select id="selectDailyUpload" resultType="map">
+        SELECT DATE(r.upload_time) AS day, COUNT(*) AS cnt
+        FROM xinketang.oss_primary_chinese_resource r
+        WHERE r.upload_time &gt;= #{since}
+        AND
+        <include refid="resourceScopeWhere"/>
+        GROUP BY DATE(r.upload_time)
+        ORDER BY day
+    </select>
+
+    <select id="selectDailyViews" resultType="map">
+        SELECT DATE(a.create_time) AS day, COUNT(*) AS cnt
+        FROM user_resource_action a
+        INNER JOIN xinketang.oss_primary_chinese_resource r
+            ON r.id = a.resource_id AND a.resource_type = 'primary_chinese'
+        WHERE a.action_type = 'view'
+        AND a.create_time &gt;= #{since}
+        AND
+        <include refid="resourceScopeWhere"/>
+        GROUP BY DATE(a.create_time)
+        ORDER BY day
+    </select>
+
+    <select id="selectDailyDownloads" resultType="map">
+        SELECT DATE(a.create_time) AS day, COUNT(*) AS cnt
+        FROM user_resource_action a
+        INNER JOIN xinketang.oss_primary_chinese_resource r
+            ON r.id = a.resource_id AND a.resource_type = 'primary_chinese'
+        WHERE a.action_type = 'download'
+        AND a.create_time &gt;= #{since}
+        AND
+        <include refid="resourceScopeWhere"/>
+        GROUP BY DATE(a.create_time)
+        ORDER BY day
+    </select>
+
+    <select id="selectDailyCollects" resultType="map">
+        SELECT DATE(c.create_time) AS day, COUNT(*) AS cnt
+        FROM collection c
+        INNER JOIN xinketang.oss_primary_chinese_resource r
+            ON r.id = c.resource_id AND c.resource_type = 'primary_chinese'
+        WHERE c.create_time &gt;= #{since}
+        AND
+        <include refid="resourceScopeWhere"/>
+        GROUP BY DATE(c.create_time)
+        ORDER BY day
+    </select>
+
+    <select id="selectAuditStats" resultType="com.k12.common.dto.AdminAnalyticsAuditVO">
+        SELECT
+            COALESCE(SUM(CASE WHEN l.action = 'approve' THEN 1 ELSE 0 END), 0) AS approved,
+            COALESCE(SUM(CASE WHEN l.action = 'reject' THEN 1 ELSE 0 END), 0) AS rejected
+        FROM resource_audit_log l
+        INNER JOIN xinketang.oss_primary_chinese_resource r ON r.id = l.resource_id
+        WHERE l.created_at &gt;= #{since}
+        AND
+        <include refid="resourceScopeWhere"/>
+    </select>
+
+    <select id="selectStageDistribution" resultType="com.k12.common.dto.AdminAnalyticsDistributionItemVO">
+        SELECT r.stage AS name, COUNT(*) AS count
+        FROM xinketang.oss_primary_chinese_resource r
+        WHERE
+        <include refid="resourceScopeWhere"/>
+        GROUP BY r.stage
+        ORDER BY count DESC
+    </select>
+
+    <select id="selectSubjectDistribution" resultType="com.k12.common.dto.AdminAnalyticsDistributionItemVO">
+        SELECT r.subject AS name, COUNT(*) AS count
+        FROM xinketang.oss_primary_chinese_resource r
+        WHERE
+        <include refid="resourceScopeWhere"/>
+        GROUP BY r.subject
+        ORDER BY count DESC
+    </select>
+
+    <select id="selectTopByDownload" resultType="com.k12.common.dto.AdminAnalyticsTopResourceVO">
+        SELECT
+            r.id,
+            r.title,
+            r.stage,
+            r.subject,
+            COALESCE(r.download_count, 0) AS downloadCount,
+            COALESCE(r.view_count, 0) AS viewCount,
+            COALESCE(collect_cnt.cnt, 0) AS collectCount
+        FROM xinketang.oss_primary_chinese_resource r
+        LEFT JOIN (
+            SELECT c.resource_id, COUNT(*) AS cnt
+            FROM collection c
+            WHERE c.resource_type = 'primary_chinese'
+            GROUP BY c.resource_id
+        ) collect_cnt ON collect_cnt.resource_id = r.id
+        WHERE
+        <include refid="resourceScopeWhere"/>
+        ORDER BY r.download_count DESC, r.view_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectTopByView" resultType="com.k12.common.dto.AdminAnalyticsTopResourceVO">
+        SELECT
+            r.id,
+            r.title,
+            r.stage,
+            r.subject,
+            COALESCE(r.download_count, 0) AS downloadCount,
+            COALESCE(r.view_count, 0) AS viewCount,
+            COALESCE(collect_cnt.cnt, 0) AS collectCount
+        FROM xinketang.oss_primary_chinese_resource r
+        LEFT JOIN (
+            SELECT c.resource_id, COUNT(*) AS cnt
+            FROM collection c
+            WHERE c.resource_type = 'primary_chinese'
+            GROUP BY c.resource_id
+        ) collect_cnt ON collect_cnt.resource_id = r.id
+        WHERE
+        <include refid="resourceScopeWhere"/>
+        ORDER BY r.view_count DESC, r.download_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectTopByCollect" resultType="com.k12.common.dto.AdminAnalyticsTopResourceVO">
+        SELECT
+            r.id,
+            r.title,
+            r.stage,
+            r.subject,
+            COALESCE(r.download_count, 0) AS downloadCount,
+            COALESCE(r.view_count, 0) AS viewCount,
+            COALESCE(collect_cnt.cnt, 0) AS collectCount
+        FROM xinketang.oss_primary_chinese_resource r
+        INNER JOIN (
+            SELECT c.resource_id, COUNT(*) AS cnt
+            FROM collection c
+            WHERE c.resource_type = 'primary_chinese'
+            GROUP BY c.resource_id
+        ) collect_cnt ON collect_cnt.resource_id = r.id
+        WHERE
+        <include refid="resourceScopeWhere"/>
+        ORDER BY collect_cnt.cnt DESC, r.view_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectTopUploaders" resultType="com.k12.common.dto.AdminAnalyticsUploaderStatVO">
+        SELECT r.uploader_id AS uploaderId, COUNT(*) AS uploadCount
+        FROM xinketang.oss_primary_chinese_resource r
+        WHERE r.upload_time &gt;= #{since}
+        AND
+        <include refid="resourceScopeWhere"/>
+        GROUP BY r.uploader_id
+        ORDER BY uploadCount DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

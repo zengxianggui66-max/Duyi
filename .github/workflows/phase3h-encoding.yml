@@ -1,0 +1,39 @@
+name: Phase3H-2 Encoding Gate
+
+on:
+  pull_request:
+    paths:
+      - 'k12-edu-platform/src/**'
+      - 'k12-edu-microservice/k12-*/src/main/java/**'
+      - 'k12-edu-microservice/sql/**'
+      - 'k12-edu-microservice/docs/**'
+      - 'k12-edu-microservice/scripts/phase3h2-encoding-scan.mjs'
+      - 'k12-edu-microservice/scripts/phase3h-acceptance-test.mjs'
+      - 'k12-edu-microservice/scripts/ci-phase3g-gate.mjs'
+      - '.gitattributes'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'k12-edu-platform/src/**'
+      - 'k12-edu-microservice/k12-*/src/main/java/**'
+      - 'k12-edu-microservice/sql/**'
+      - 'k12-edu-microservice/docs/**'
+      - 'k12-edu-microservice/scripts/phase3h2-encoding-scan.mjs'
+      - '.gitattributes'
+
+jobs:
+  encoding-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Phase3H-2 critical UI encoding
+        run: node scripts/phase3h2-encoding-scan.mjs --critical-only
+        working-directory: k12-edu-microservice
+      - name: Phase3H-2 full encoding scan
+        run: node scripts/phase3h2-encoding-scan.mjs
+        working-directory: k12-edu-microservice

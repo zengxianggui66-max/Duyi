@@ -1,0 +1,10 @@
+# 生产环境：上传后待审核（需管理端审核通过后再展示时可保持 0）
+k12:
+  resource:
+    upload:
+      default-status: 0
+
+# 与 k12-auth 保持一致，避免仅激活 prod 配置时缺少 jwt 导致启动失败
+jwt:
+  secret: k12-education-platform-secret-key-2026-spring-boot-jwt-token
+  expiration: 86400000

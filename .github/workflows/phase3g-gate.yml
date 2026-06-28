@@ -1,0 +1,34 @@
+name: Phase3G Legacy Gate
+
+on:
+  pull_request:
+    paths:
+      - 'k12-edu-platform/src/**'
+      - 'k12-edu-microservice/k12-resource/src/main/java/**/controller/**'
+      - 'k12-edu-microservice/scripts/phase3g-no-new-legacy-calls-gate.mjs'
+      - 'k12-edu-microservice/scripts/phase3k-compat-controller-gate.mjs'
+      - 'k12-edu-microservice/scripts/phase3h2-encoding-scan.mjs'
+      - 'k12-edu-microservice/scripts/ci-phase3g-gate.mjs'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'k12-edu-platform/src/**'
+      - 'k12-edu-microservice/k12-resource/src/main/java/**/controller/**'
+      - 'k12-edu-microservice/scripts/phase3g-no-new-legacy-calls-gate.mjs'
+      - 'k12-edu-microservice/scripts/phase3k-compat-controller-gate.mjs'
+      - 'k12-edu-microservice/scripts/phase3h2-encoding-scan.mjs'
+      - 'k12-edu-microservice/scripts/ci-phase3g-gate.mjs'
+
+jobs:
+  no-new-legacy-calls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Phase3G+3H-2+3K code freeze gates
+        run: node scripts/ci-phase3g-gate.mjs
+        working-directory: k12-edu-microservice

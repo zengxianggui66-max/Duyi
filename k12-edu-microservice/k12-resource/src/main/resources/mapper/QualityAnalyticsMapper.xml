@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.k12.resource.mapper.QualityAnalyticsMapper">
+
+    <!-- ============================================================ -->
+    <!-- 审核 SLA -->
+    <!-- ============================================================ -->
+    <select id="selectAuditSla" resultType="com.k12.common.dto.AuditSlaVO">
+        SELECT
+            COALESCE(AVG(TIMESTAMPDIFF(SECOND, r.upload_time, l.created_at)), 0) AS avgAuditDurationSec,
+            (SELECT COUNT(*)
+             FROM xinketang.oss_primary_chinese_resource r2
+             WHERE r2.is_deleted = 0
+               AND r2.audit_status = 0
+               AND r2.upload_time &lt; #{overtime24hBound}) AS overtime24hCount,
+            (SELECT COUNT(*)
+             FROM xinketang.oss_primary_chinese_resource r3
+             WHERE r3.is_deleted = 0
+               AND r3.audit_status = 0
+               AND r3.upload_time &lt; #{overtime48hBound}) AS overtime48hCount,
+            (SELECT COUNT(*)
+             FROM xinketang.oss_primary_chinese_resource r4
+             WHERE r4.is_deleted = 0
+               AND r4.audit_status = 0
+               AND r4.upload_time &lt; #{overtime72hBound}) AS overtime72hCount,
+            (SELECT COUNT(*)
+             FROM xinketang.oss_primary_chinese_resource r5
+             WHERE r5.is_deleted = 0
+               AND r5.audit_status = 0) AS totalPendingCount,
+            COALESCE((SELECT COUNT(*)
+             FROM resource_audit_log log
+             WHERE DATE(log.created_at) = CURDATE()
+               AND log.action IN ('approve', 'approve_publish', 'approve_audit')), 0) AS todayCompletedCount,
+            COALESCE((SELECT COUNT(*)
+             FROM resource_audit_log log
+             WHERE DATE(log.created_at) = CURDATE()
+               AND log.action = 'reject'), 0) AS todayRejectedCount
+        FROM resource_audit_log l
+        INNER JOIN xinketang.oss_primary_chinese_resource r
+            ON r.id = l.resource_id
+        WHERE l.created_at >= #{since}
+          AND l.action IN ('approve', 'approve_publish', 'approve_audit', 'reject')
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 审核员工作量 -->
+    <!-- ============================================================ -->
+    <select id="selectAuditorWorkload" resultType="com.k12.common.dto.AuditWorkloadVO">
+        SELECT
+            l.auditor_id     AS auditorId,
+            l.auditor_name   AS auditorName,
+            SUM(CASE WHEN l.action IN ('approve', 'approve_publish', 'approve_audit') THEN 1 ELSE 0 END) AS approveCount,
+            SUM(CASE WHEN l.action = 'reject' THEN 1 ELSE 0 END) AS rejectCount,
+            COUNT(*)         AS totalCount,
+            CAST(COALESCE(AVG(TIMESTAMPDIFF(SECOND, r.upload_time, l.created_at)), 0) AS UNSIGNED) AS avgDurationSec,
+            CAST(COALESCE(MAX(TIMESTAMPDIFF(SECOND, r.upload_time, l.created_at)), 0) AS UNSIGNED) AS maxDurationSec
+        FROM resource_audit_log l
+        INNER JOIN xinketang.oss_primary_chinese_resource r
+            ON r.id = l.resource_id
+        WHERE l.created_at >= #{since}
+          AND l.action IN ('approve', 'approve_publish', 'approve_audit', 'reject')
+        GROUP BY l.auditor_id, l.auditor_name
+        ORDER BY totalCount DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 驳回原因统计 -->
+    <!-- ============================================================ -->
+    <select id="selectRejectStats" resultType="com.k12.common.dto.RejectStatsVO">
+        SELECT
+            COALESCE(arr.category, 0)  AS category,
+            CASE
+                WHEN arr.category = 0 THEN '通用'
+                WHEN arr.category = 1 THEN '内容质量'
+                WHEN arr.category = 2 THEN '格式规范'
+                WHEN arr.category = 3 THEN '版权合规'
+                WHEN arr.category = 4 THEN '分类挂载'
+                WHEN arr.category = 5 THEN '其他'
+                ELSE '通用'
+            END  AS categoryName,
+            COALESCE(arr.content, l.reason) AS reason,
+            COUNT(*) AS rejectCount
+        FROM resource_audit_log l
+        LEFT JOIN xinketang.audit_reject_reason arr
+            ON arr.content = l.reason
+        WHERE l.action = 'reject'
+          AND l.created_at >= #{since}
+        GROUP BY COALESCE(arr.category, 0), COALESCE(arr.content, l.reason), COALESCE(arr.category, 0)
+        ORDER BY rejectCount DESC
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 资源增长趋势日数据点 -->
+    <!-- ============================================================ -->
+    <select id="selectGrowthDailyPoints" resultType="com.k12.common.dto.DailyStatsPointVO">
+        SELECT
+            stat_date         AS statDate,
+            new_count         AS newCount,
+            approved_count    AS approvedCount,
+            rejected_count    AS rejectedCount,
+            offline_count     AS offlineCount,
+            download_count    AS downloadCount,
+            view_count        AS viewCount
+        FROM xinketang.resource_daily_stats
+        WHERE stat_date >= #{since}
+          AND source_type = #{sourceType}
+        ORDER BY stat_date ASC
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 低访问资源分页 -->
+    <!-- ============================================================ -->
+    <select id="selectLowAccessResources" resultType="com.k12.common.dto.LowAccessResourceVO">
+        SELECT * FROM v_low_access_resource
+        WHERE 1=1
+        <if test="stage != null and stage != ''">
+            AND stage = #{stage}
+        </if>
+        <if test="subject != null and subject != ''">
+            AND subject = #{subject}
+        </if>
+        <if test="accessLevel != null and accessLevel != ''">
+            AND access_level = #{accessLevel}
+        </if>
+        ORDER BY days_since_upload DESC, view_count ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 低访问资源总数 -->
+    <!-- ============================================================ -->
+    <select id="countLowAccessResources" resultType="int">
+        SELECT COUNT(*) FROM v_low_access_resource
+        WHERE 1=1
+        <if test="stage != null and stage != ''">
+            AND stage = #{stage}
+        </if>
+        <if test="subject != null and subject != ''">
+            AND subject = #{subject}
+        </if>
+        <if test="accessLevel != null and accessLevel != ''">
+            AND access_level = #{accessLevel}
+        </if>
+    </select>
+
+    <!-- ============================================================ -->
+    <!-- 审核通过/驳回率汇总 -->
+    <!-- ============================================================ -->
+    <select id="selectApprovalRateSummary" resultType="map">
+        SELECT
+            COALESCE(SUM(CASE WHEN l.action IN ('approve', 'approve_publish', 'approve_audit') THEN 1 ELSE 0 END), 0) AS totalApproved,
+            COALESCE(SUM(CASE WHEN l.action = 'reject' THEN 1 ELSE 0 END), 0) AS totalRejected
+        FROM resource_audit_log l
+        WHERE l.created_at >= #{since}
+    </select>
+
+</mapper>

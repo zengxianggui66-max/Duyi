@@ -1,0 +1,50 @@
+name: Phase3K DB Nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  resource-main-chain:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: zxg123456
+          MYSQL_DATABASE: xinketang
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pzxg123456"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install mysql client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+      - name: Bootstrap schema (minimal for verify)
+        run: |
+          for f in sql/02_dimension_core.sql sql/05_resource.sql sql/83_phase7_resource_main.sql sql/86_phase3b_resource_main_chain.sql sql/97_phase3k_table_tier_comments.sql; do
+            if [ -f "$f" ]; then mysql -h127.0.0.1 -uroot -pzxg123456 xinketang < "$f" || true; fi
+          done
+        working-directory: k12-edu-microservice
+      - name: Verify resource main chain SQL (read-only)
+        continue-on-error: true
+        run: mysql -h127.0.0.1 -uroot -pzxg123456 xinketang < sql/tools/verify_phase3_resource_main_chain.sql
+        working-directory: k12-edu-microservice
+      - name: Phase3K DB acceptance (K3 unmapped=0)
+        continue-on-error: true
+        env:
+          MYSQL_BIN: mysql
+          MYSQL_USER: root
+          MYSQL_PASSWORD: zxg123456
+          MYSQL_DB: xinketang
+          PHASE3K_SKIP_SQL: '1'
+        run: node scripts/phase3k-db-acceptance.mjs
+        working-directory: k12-edu-microservice

@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.k12.resource.mapper.ResourceSearchIndexMapper">
+
+
+
+    <sql id="tokenWhere">
+
+        <choose>
+
+            <when test="q.tokenClauses != null and q.tokenClauses.size() &gt; 0">
+
+                <foreach collection="q.tokenClauses" item="clause">
+
+                    AND (
+
+                    <foreach collection="clause.aliases" item="alias" separator=" OR ">
+
+                        search_text LIKE CONCAT('%', #{alias}, '%')
+
+                    </foreach>
+
+                    )
+
+                </foreach>
+
+            </when>
+
+            <when test="q.mustTokens != null and q.mustTokens.size() &gt; 0">
+
+                <foreach collection="q.mustTokens" item="token">
+
+                    AND search_text LIKE CONCAT('%', #{token}, '%')
+
+                </foreach>
+
+            </when>
+
+        </choose>
+
+    </sql>
+
+
+
+    <sql id="relevanceScoreExpr">
+
+        (
+
+            CASE
+
+                WHEN #{q.rawKeyword} IS NOT NULL AND #{q.rawKeyword} != '' AND title = #{q.rawKeyword} THEN 300
+
+                WHEN #{q.rawKeyword} IS NOT NULL AND #{q.rawKeyword} != '' AND title LIKE CONCAT(#{q.rawKeyword}, '%') THEN 220
+
+                WHEN #{q.rawKeyword} IS NOT NULL AND #{q.rawKeyword} != '' AND title LIKE CONCAT('%', #{q.rawKeyword}, '%') THEN 140
+
+                ELSE 0
+
+            END
+
+        )
+
+        <if test="q.tokenClauses != null and q.tokenClauses.size() &gt; 0">
+
+            <foreach collection="q.tokenClauses" item="clause">
+
+                + (
+
+                    CASE
+
+                        WHEN title LIKE CONCAT(#{clause.primary}, '%') THEN 80
+
+                        WHEN title LIKE CONCAT('%', #{clause.primary}, '%') THEN 50
+
+                        WHEN teaching_type LIKE CONCAT('%', #{clause.primary}, '%') THEN 35
+
+                        WHEN search_text LIKE CONCAT('%', #{clause.primary}, '%') THEN 20
+
+                        ELSE 0
+
+                    END
+
+                )
+
+            </foreach>
+
+        </if>
+
+        + IFNULL(hot_score, 0)
+
+    </sql>
+
+
+
+    <sql id="commonFilter">
+
+        <if test="q.hideVip">
+
+            AND vip_flag = 0
+
+        </if>
+
+        <include refid="tokenWhere"/>
+
+        <if test="q.subject != null and q.subject != ''">
+
+            AND subject = #{q.subject}
+
+        </if>
+
+        <if test="q.editionName != null and q.editionName != ''">
+
+            AND edition_name LIKE CONCAT('%', #{q.editionName}, '%')
+
+        </if>
+
+        <if test="q.gradeName != null and q.gradeName != ''">
+
+            AND grade_name LIKE CONCAT('%', #{q.gradeName}, '%')
+
+        </if>
+
+        <if test="q.moduleName != null and q.moduleName != ''">
+
+            AND module_name LIKE CONCAT('%', #{q.moduleName}, '%')
+
+        </if>
+
+    </sql>
+
+
+
+    <sql id="searchWhere">
+
+        FROM resource_search_index
+
+        WHERE status = 1
+
+        <include refid="commonFilter"/>
+
+        <if test="q.stageKey != null and q.stageKey != ''">
+
+            AND stage_key = #{q.stageKey}
+
+        </if>
+
+        <if test="q.channelKey != null and q.channelKey != ''">
+
+            AND channel_key = #{q.channelKey}
+
+        </if>
+
+        <if test="q.teachingType != null and q.teachingType != ''">
+
+            AND teaching_type = #{q.teachingType}
+
+        </if>
+
+        <if test="q.domainChannelKeys != null and q.domainChannelKeys.size() &gt; 0">
+
+            AND channel_key IN
+
+            <foreach collection="q.domainChannelKeys" item="ck" open="(" separator="," close=")">
+
+                #{ck}
+
+            </foreach>
+
+        </if>
+
+    </sql>
+
+
+
+    <sql id="facetStageWhere">
+
+        FROM resource_search_index
+
+        WHERE status = 1
+
+        <include refid="commonFilter"/>
+
+        <if test="q.channelKey != null and q.channelKey != ''">
+
+            AND channel_key = #{q.channelKey}
+
+        </if>
+
+        <if test="q.teachingType != null and q.teachingType != ''">
+
+            AND teaching_type = #{q.teachingType}
+
+        </if>
+
+    </sql>
+
+
+
+    <sql id="facetChannelWhere">
+
+        FROM resource_search_index
+
+        WHERE status = 1
+
+        <include refid="commonFilter"/>
+
+        <if test="q.stageKey != null and q.stageKey != ''">
+
+            AND stage_key = #{q.stageKey}
+
+        </if>
+
+        <if test="q.teachingType != null and q.teachingType != ''">
+
+            AND teaching_type = #{q.teachingType}
+
+        </if>
+
+    </sql>
+
+
+
+    <sql id="facetTypeWhere">
+
+        FROM resource_search_index
+
+        WHERE status = 1
+
+        <include refid="commonFilter"/>
+
+        <if test="q.stageKey != null and q.stageKey != ''">
+
+            AND stage_key = #{q.stageKey}
+
+        </if>
+
+        <if test="q.channelKey != null and q.channelKey != ''">
+
+            AND channel_key = #{q.channelKey}
+
+        </if>
+
+    </sql>
+
+
+
+    <select id="countSearch" resultType="long">
+
+        SELECT COUNT(1)
+
+        <include refid="searchWhere"/>
+
+    </select>
+
+
+
+    <select id="searchPage" resultType="com.k12.resource.entity.ResourceSearchIndex">
+
+        SELECT *
+
+        <include refid="searchWhere"/>
+
+        ORDER BY
+
+        <choose>
+
+            <when test="q.sort == 'newest'">
+
+                publish_time DESC, hot_score DESC
+
+            </when>
+
+            <when test="q.sort == 'download'">
+
+                download_count DESC, view_count DESC
+
+            </when>
+
+            <otherwise>
+
+                <include refid="relevanceScoreExpr"/> DESC,
+
+                publish_time DESC
+
+            </otherwise>
+
+        </choose>
+
+        LIMIT #{q.offset}, #{q.limit}
+
+    </select>
+
+
+
+    <select id="facetStages" resultType="com.k12.resource.search.SearchFacetRow">
+
+        SELECT stage_key AS facetKey, stage_name AS facetName, COUNT(1) AS facetCount
+
+        <include refid="facetStageWhere"/>
+
+        AND stage_key IS NOT NULL AND stage_key != ''
+
+        GROUP BY stage_key, stage_name
+
+        ORDER BY facetCount DESC
+
+    </select>
+
+
+
+    <select id="facetChannels" resultType="com.k12.resource.search.SearchFacetRow">
+
+        SELECT channel_key AS facetKey, channel_name AS facetName, COUNT(1) AS facetCount
+
+        <include refid="facetChannelWhere"/>
+
+        AND channel_key IS NOT NULL AND channel_key != ''
+
+        GROUP BY channel_key, channel_name
+
+        ORDER BY facetCount DESC
+
+    </select>
+
+
+
+    <select id="facetTypes" resultType="com.k12.resource.search.SearchFacetRow">
+
+        SELECT teaching_type AS facetKey, teaching_type AS facetName, COUNT(1) AS facetCount
+
+        <include refid="facetTypeWhere"/>
+
+        AND teaching_type IS NOT NULL AND teaching_type != ''
+
+        GROUP BY teaching_type
+
+        ORDER BY facetCount DESC
+
+    </select>
+
+
+
+</mapper>
+

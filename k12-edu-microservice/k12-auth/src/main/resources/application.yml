@@ -1,0 +1,60 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: k12-auth
+  datasource:
+    url: jdbc:mysql://localhost:3306/xinketang?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: zxg123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: k12-edu
+        enabled: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+jwt:
+  secret: k12-education-platform-secret-key-2026-spring-boot-jwt-token
+  expiration: 86400000
+
+# OAuth 第三方登录配置
+oauth:
+  mock:
+    enabled: true  # 开发阶段使用模拟模式，生产环境设为 false
+  weixin:
+    app-id: your-weixin-app-id
+    app-secret: your-weixin-app-secret
+    redirect-uri: http://localhost:9000/api/auth/oauth/wechat/callback
+  qq:
+    app-id: your-qq-app-id
+    app-secret: your-qq-app-secret
+    redirect-uri: http://localhost:9000/api/auth/oauth/qq/callback
+  wework:
+    corp-id: your-wework-corp-id
+    corp-secret: your-wework-corp-secret
+    agent-id: your-wework-agent-id
+    redirect-uri: http://localhost:5173/login/oauth/callback
+
+logging:
+  level:
+    com.k12.auth.mapper: debug
+
+# 管理端 RBAC（仅 auth / resource 启用）
+k12:
+  admin:
+    rbac:
+      enabled: true
